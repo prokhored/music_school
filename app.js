@@ -101,3 +101,8 @@ async function addLesson(studentId) {
 
   alert("Урок сохранён!");
 }
+
+
+window.addStudent = addStudent;
+window.addLesson = addLesson;
+window.loadStudents = loadStudents;
