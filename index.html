@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music CRM</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="page-header">
+  <div>
+    <h1>🎵 Ученики</h1>
+  </div>
+  <div class="header-actions">
+    <a class="btn-secondary" href="schedule.html">📅 Смотреть расписание</a>
+    <button id="logoutButton" class="btn-danger" onclick="logout()" style="display:none;">Выйти</button>
+  </div>
+</header>
+
+<section id="authSection" class="auth-card">
+  <h2>Вход для администратора</h2>
+  <input id="authUsername" placeholder="Логин" autocomplete="username">
+  <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password">
+  <button class="btn-primary" onclick="login()">Войти</button>
+  <p class="auth-note">Только после входа становится доступен раздел учеников.</p>
+</section>
+
+<div id="mainContent" style="display:none;">
+  <div id="students"></div>
+
+  <section id="addStudentSection">
+  <h2>➕ Добавить ученика</h2>
+  <input id="name" placeholder="Имя ученика">
+  <input id="instrument" placeholder="Инструмент">
+  <button class="btn-primary" onclick="addStudent()" style="width: 100%;">Добавить ученика</button>
+</section>
+
+<div id="studentView" style="display:none;">
+  
+  <div class="student-header">
+    <div class="student-info">
+      <h2 id="studentName"></h2>
+      <p id="studentInstrument"></p>
+    </div>
+    <button class="btn-danger" onclick="closeStudent()">← Назад</button>
+  </div>
+
+  <button class="btn-success" onclick="toggleEditStudent()" style="width: 100%;">✏️ Редактировать</button>
+
+  <div id="editStudentForm" style="display:none;">
+    <h3>Редактирование ученика</h3>
+    <div class="form-row">
+      <input id="editName" placeholder="Имя">
+      <input id="editInstrument" placeholder="Инструмент">
+    </div>
+    <div class="button-row">
+      <button class="btn-success" onclick="saveEditStudent()">Сохранить</button>
+      <button class="btn-secondary" onclick="toggleEditStudent()">Отменить</button>
+    </div>
+  </div>
+
+  <div class="student-meta">
+    <p id="subscriptionInfo">Осталось занятий: 0</p>
+  </div>
+  <button class="btn-secondary" onclick="addSubscription()" style="width: 100%;">➕ купить абонемент 4 занятия</button>
+  <button class="btn-primary" onclick="toggleLessonForm()" style="width: 100%;">➕ Провести урок</button>
+
+  <div id="lessonForm" style="display:none;">
+    <h3>Новый урок</h3>
+    <input type="date" id="lessonDate">
+    <input id="lessonMaterial" placeholder="Материал">
+    <input id="lessonHomework" placeholder="Домашка">
+    <input id="lessonPlan" placeholder="План на следующий урок">
+    <div class="button-row">
+      <button class="btn-primary" onclick="addLessonFromCard()">Добавить урок</button>
+      <button class="btn-secondary" onclick="toggleLessonForm()">Отменить</button>
+    </div>
+  </div>
+
+  <h3>📚 История уроков</h3>
+  <div id="lessons"></div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
