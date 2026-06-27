@@ -12,10 +12,57 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const AUTH_USERS = [
+  { username: "admin", password: "1234" }
+];
 
 let currentStudentId = null;
 let currentStudentName = null;
 let currentStudentInstrument = null;
+let isAuthenticated = false;
+
+function authenticateUser(authenticated) {
+  isAuthenticated = authenticated;
+  const authSection = document.getElementById("authSection");
+  const mainContent = document.getElementById("mainContent");
+  const logoutButton = document.getElementById("logoutButton");
+
+  if (!authSection || !mainContent || !logoutButton) return;
+
+  if (authenticated) {
+    authSection.style.display = "none";
+    mainContent.style.display = "block";
+    logoutButton.style.display = "inline-block";
+    loadStudents();
+  } else {
+    authSection.style.display = "block";
+    mainContent.style.display = "none";
+    logoutButton.style.display = "none";
+  }
+}
+
+function login() {
+  const username = document.getElementById("authUsername").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const user = AUTH_USERS.find((u) => u.username === username && u.password === password);
+
+  if (!user) {
+    alert("Неверный логин или пароль.");
+    return;
+  }
+
+  sessionStorage.setItem("music_crm_logged_in", "yes");
+  authenticateUser(true);
+}
+
+function logout() {
+  sessionStorage.removeItem("music_crm_logged_in");
+  authenticateUser(false);
+}
+
+function isLoggedIn() {
+  return sessionStorage.getItem("music_crm_logged_in") === "yes";
+}
 
 /* =========================
    ЗАГРУЗКА УЧЕНИКОВ
@@ -444,8 +491,8 @@ async function loadSchedule() {
    ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("students")) {
-    loadStudents();
+  if (document.getElementById("authSection")) {
+    authenticateUser(isLoggedIn());
   }
 
   if (document.getElementById("schedule")) {
