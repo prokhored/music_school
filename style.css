@@ -32,6 +32,27 @@ h3 {
   font-size: 18px;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  color: #666;
+  padding: 20px;
+  background: #fff;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+}
+
+.schedule-item {
+  border-left-color: #4CAF50;
+} 
+
 /* Список учеников */
 #students {
   display: grid;
