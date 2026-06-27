@@ -514,3 +514,5 @@ window.toggleLessonForm = toggleLessonForm;
 window.addLessonFromCard = addLessonFromCard;
 window.deleteLesson = deleteLesson;
 window.addSubscription = addSubscription;
+window.login = login;
+window.logout = logout;
