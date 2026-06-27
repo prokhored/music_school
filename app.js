@@ -115,6 +115,7 @@ async function openStudent(id, name, instrument) {
   document.getElementById("studentView").style.display = "block";
   document.getElementById("studentName").innerText = name;
   document.getElementById("studentInstrument").innerText = instrument;
+  document.getElementById("studentView").querySelector("#subscriptionInfo").innerText = "Осталось занятий: загрузка...";
   document.getElementById("editStudentForm").style.display = "none";
   document.getElementById("lessonForm").style.display = "none";
 
@@ -196,40 +197,79 @@ function toggleLessonForm() {
   }
 }
 
+function formatDateTime(rawDate, withTime = true) {
+  if (!rawDate) return "";
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return rawDate;
+
+  const options = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  };
+
+  if (withTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+  }
+
+  return date.toLocaleString("ru-RU", options).replace(",", "");
+}
+
 /* =========================
    ИСТОРИЯ УРОКОВ
    ========================= */
 
 async function loadLessons(studentId) {
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("lesson_events")
     .select("*")
     .eq("student_id", studentId)
     .order("created_at", { ascending: false });
 
+  if (error) {
+    console.log(error);
+    return;
+  }
+
   const container = document.getElementById("lessons");
   container.innerHTML = "";
 
-  data.forEach((l) => {
+  const remainingLessons = data.reduce((sum, event) => {
+    return sum + (typeof event.value === "number" ? event.value : 0);
+  }, 0);
 
+  document.getElementById("subscriptionInfo").innerText = `Осталось занятий: ${remainingLessons}`;
+
+  data.forEach((l) => {
     const div = document.createElement("div");
     div.className = "lesson-item";
-    
-    // Форматируем дату из поля lesson_date, если его нет, используем created_at
-    const lessonDate = l.lesson_date ? new Date(l.lesson_date).toLocaleDateString('ru-RU') : new Date(l.created_at).toLocaleDateString('ru-RU');
 
-    div.innerHTML = `
-      <div class="lesson-date">📅 ${lessonDate}</div>
-      <div class="lesson-content">
-        <strong>📘 Материал:</strong> ${l.material || "-"}<br>
-        <strong>📚 Домашка:</strong> ${l.homework || "-"}<br>
-        <strong>➡️ План:</strong> ${l.next_plan || "-"}
-      </div>
-      <button class="btn-danger lesson-delete" onclick="deleteLesson('${l.id}')">
-        🗑️ Удалить
-      </button>
-    `;
+    const eventDate = l.lesson_date ? l.lesson_date : l.created_at;
+    const formattedDate = formatDateTime(eventDate);
+
+    if (l.type === "abonement") {
+      div.innerHTML = `
+        <div class="lesson-date">📅 ${formattedDate}</div>
+        <div class="lesson-content">
+          <strong>🎟️ Куплен абонемент:</strong> ${l.value || 4} занятия<br>
+          <em>Тип события: абонемент</em>
+        </div>
+      `;
+    } else {
+      div.innerHTML = `
+        <div class="lesson-date">📅 ${formattedDate}</div>
+        <div class="lesson-content">
+          <strong>📘 Материал:</strong> ${l.material || "-"}<br>
+          <strong>📚 Домашка:</strong> ${l.homework || "-"}<br>
+          <strong>➡️ План:</strong> ${l.next_plan || "-"}
+        </div>
+        <button class="btn-danger lesson-delete" onclick="deleteLesson('${l.id}')">
+          🗑️ Удалить
+        </button>
+      `;
+    }
 
     container.appendChild(div);
   });
@@ -248,6 +288,26 @@ async function addLessonFromCard() {
 
   if (!lessonDate || !material || !homework || !next) {
     alert("Заполните все поля!");
+    return;
+  }
+
+  const { data, error: countError } = await supabase
+    .from("lesson_events")
+    .select("value")
+    .eq("student_id", currentStudentId);
+
+  if (countError) {
+    console.log(countError);
+    alert("Ошибка при проверке абонемента!");
+    return;
+  }
+
+  const remainingLessons = data.reduce((sum, event) => {
+    return sum + (typeof event.value === "number" ? event.value : 0);
+  }, 0);
+
+  if (remainingLessons <= 0) {
+    alert("Нет доступных занятий. Купите абонемент на 4 занятия.");
     return;
   }
 
@@ -299,6 +359,32 @@ async function deleteLesson(lessonId) {
   alert("Урок удалён!");
 }
 
+async function addSubscription() {
+  if (!currentStudentId) {
+    alert("Сначала откройте профиль ученика.");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("lesson_events")
+    .insert([
+      {
+        student_id: currentStudentId,
+        type: "abonement",
+        value: 4
+      }
+    ]);
+
+  if (error) {
+    console.log(error);
+    alert("Ошибка при добавлении абонемента!");
+    return;
+  }
+
+  loadLessons(currentStudentId);
+  alert("Абонемент на 4 занятия добавлен!");
+}
+
 /* =========================
    АВТОЗАГРУЗКА
    ========================= */
@@ -320,3 +406,4 @@ window.saveEditStudent = saveEditStudent;
 window.toggleLessonForm = toggleLessonForm;
 window.addLessonFromCard = addLessonFromCard;
 window.deleteLesson = deleteLesson;
+window.addSubscription = addSubscription;
