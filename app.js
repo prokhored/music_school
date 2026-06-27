@@ -34,19 +34,79 @@ async function loadStudents() {
     const div = document.createElement("div");
 
     div.innerHTML = `
-      <b>${student.name}</b> (${student.instrument})
+  <div style="padding:10px; border:1px solid #ccc; margin:5px;">
+    <b>${s.name}</b> (${s.instrument})
 
-      <!-- 🔴 СЮДА ПОТОМ ДОБАВИМ "ОСТАЛОСЬ ЗАНЯТИЙ" -->
+    <br>
 
-      <button onclick="addLesson('${student.id}')">
-        Провести урок
-      </button>
+    <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
+      Открыть
+    </button>
+  </div>
+`;
+    container.appendChild(div);
+  });
+}
+
+let currentStudentId = null;
+async function openStudent(id, name, instrument) {
+
+  currentStudentId = id;
+
+  document.getElementById("studentView").style.display = "block";
+  document.getElementById("studentName").innerText = name;
+  document.getElementById("studentInstrument").innerText = instrument;
+
+  loadLessons(id);
+}
+
+async function loadLessons(studentId) {
+
+  const { data } = await supabase
+    .from("lesson_events")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false });
+
+  const container = document.getElementById("lessons");
+  container.innerHTML = "";
+
+  data.forEach(l => {
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <div style="border-bottom:1px solid #ddd; padding:8px;">
+        <b>${l.created_at}</b><br>
+        📘 ${l.material || "-"}<br>
+        📚 ${l.homework || "-"}<br>
+        ➡️ ${l.next_plan || "-"}
+      </div>
     `;
 
     container.appendChild(div);
   });
 }
 
+async function addLessonFromCard() {
+
+  const material = prompt("Материал:");
+  const homework = prompt("Домашка:");
+  const next = prompt("План:");
+
+  await supabase.from("lesson_events").insert([
+    {
+      student_id: currentStudentId,
+      type: "lesson",
+      value: -1,
+      material,
+      homework,
+      next_plan: next
+    }
+  ]);
+
+  loadLessons(currentStudentId);
+}
 
 async function addStudent() {
 
