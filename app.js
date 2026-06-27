@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 
-const supabaseUrl = "https://musbeszcufebiwtevabu.supabase.co"; 
+const supabaseUrl = "https://musbeszcufebiwtevabu.supabase.co";
 // ↑ ЗАМЕНИ НА СВОЙ Project URL из Supabase Dashboard
 
 // 2) anon key (публичный ключ)
@@ -14,6 +14,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 
 let currentStudentId = null;
+let currentStudentName = null;
+let currentStudentInstrument = null;
 
 /* =========================
    ЗАГРУЗКА УЧЕНИКОВ
@@ -36,22 +38,18 @@ async function loadStudents() {
   data.forEach((s) => {
 
     const div = document.createElement("div");
+    div.className = "student-card";
 
     div.innerHTML = `
-      <div style="padding:10px; border:1px solid #ccc; margin:5px;">
-        
-        <b>${s.name}</b> (${s.instrument})
-
-        <br><br>
-
-        <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
-          Открыть
+      <div class="student-name">${s.name}</div>
+      <div class="student-instrument">${s.instrument}</div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
+          👁️ Открыть
         </button>
-
-        <button onclick="deleteStudent('${s.id}')" style="color:red;">
-          Удалить
+        <button class="btn-danger" onclick="deleteStudent('${s.id}')">
+          🗑️ Удалить
         </button>
-
       </div>
     `;
 
@@ -111,12 +109,91 @@ async function deleteStudent(id) {
 async function openStudent(id, name, instrument) {
 
   currentStudentId = id;
+  currentStudentName = name;
+  currentStudentInstrument = instrument;
 
   document.getElementById("studentView").style.display = "block";
   document.getElementById("studentName").innerText = name;
   document.getElementById("studentInstrument").innerText = instrument;
+  document.getElementById("editStudentForm").style.display = "none";
+  document.getElementById("lessonForm").style.display = "none";
 
   loadLessons(id);
+}
+
+/* =========================
+   ЗАКРЫТЬ ПРОФИЛЬ УЧЕНИКА
+   ========================= */
+
+function closeStudent() {
+  document.getElementById("studentView").style.display = "none";
+  currentStudentId = null;
+}
+
+/* =========================
+   РЕДАКТИРОВАНИЕ УЧЕНИКА
+   ========================= */
+
+function toggleEditStudent() {
+  const form = document.getElementById("editStudentForm");
+  
+  if (form.style.display === "none") {
+    document.getElementById("editName").value = currentStudentName;
+    document.getElementById("editInstrument").value = currentStudentInstrument;
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
+}
+
+async function saveEditStudent() {
+  const newName = document.getElementById("editName").value;
+  const newInstrument = document.getElementById("editInstrument").value;
+
+  if (!newName || !newInstrument) {
+    alert("Заполните все поля!");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("students")
+    .update({ name: newName, instrument: newInstrument })
+    .eq("id", currentStudentId);
+
+  if (error) {
+    console.log(error);
+    alert("Ошибка при сохранении!");
+    return;
+  }
+
+  currentStudentName = newName;
+  currentStudentInstrument = newInstrument;
+
+  document.getElementById("studentName").innerText = newName;
+  document.getElementById("studentInstrument").innerText = newInstrument;
+  document.getElementById("editStudentForm").style.display = "none";
+
+  loadStudents();
+  alert("Ученик обновлён!");
+}
+
+/* =========================
+   ПОКАЗАТЬ/СКРЫТЬ ФОРМУ УРОКА
+   ========================= */
+
+function toggleLessonForm() {
+  const form = document.getElementById("lessonForm");
+  if (form.style.display === "none") {
+    // Установить сегодняшнюю дату по умолчанию
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("lessonDate").value = today;
+    document.getElementById("lessonMaterial").value = "";
+    document.getElementById("lessonHomework").value = "";
+    document.getElementById("lessonPlan").value = "";
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
 }
 
 /* =========================
@@ -137,14 +214,21 @@ async function loadLessons(studentId) {
   data.forEach((l) => {
 
     const div = document.createElement("div");
+    div.className = "lesson-item";
+    
+    // Форматируем дату из поля lesson_date, если его нет, используем created_at
+    const lessonDate = l.lesson_date ? new Date(l.lesson_date).toLocaleDateString('ru-RU') : new Date(l.created_at).toLocaleDateString('ru-RU');
 
     div.innerHTML = `
-      <div style="border-bottom:1px solid #ddd; padding:8px;">
-        📘 ${l.material || "-"}<br>
-        📚 ${l.homework || "-"}<br>
-        ➡️ ${l.next_plan || "-"}<br>
-        <small>${l.created_at}</small>
+      <div class="lesson-date">📅 ${lessonDate}</div>
+      <div class="lesson-content">
+        <strong>📘 Материал:</strong> ${l.material || "-"}<br>
+        <strong>📚 Домашка:</strong> ${l.homework || "-"}<br>
+        <strong>➡️ План:</strong> ${l.next_plan || "-"}
       </div>
+      <button class="btn-danger lesson-delete" onclick="deleteLesson('${l.id}')">
+        🗑️ Удалить
+      </button>
     `;
 
     container.appendChild(div);
@@ -157,9 +241,15 @@ async function loadLessons(studentId) {
 
 async function addLessonFromCard() {
 
-  const material = prompt("Материал:");
-  const homework = prompt("Домашка:");
-  const next = prompt("План:");
+  const lessonDate = document.getElementById("lessonDate").value;
+  const material = document.getElementById("lessonMaterial").value;
+  const homework = document.getElementById("lessonHomework").value;
+  const next = document.getElementById("lessonPlan").value;
+
+  if (!lessonDate || !material || !homework || !next) {
+    alert("Заполните все поля!");
+    return;
+  }
 
   const { error } = await supabase
     .from("lesson_events")
@@ -168,6 +258,7 @@ async function addLessonFromCard() {
         student_id: currentStudentId,
         type: "lesson",
         value: -1,
+        lesson_date: lessonDate,
         material,
         homework,
         next_plan: next
@@ -176,11 +267,37 @@ async function addLessonFromCard() {
 
   if (error) {
     console.log(error);
+    alert("Ошибка при добавлении урока!");
     return;
   }
 
   loadLessons(currentStudentId);
-} // 👈 ОБЯЗАТЕЛЬНО ЗАКРЫЛИ ФУНКЦИЮ
+  toggleLessonForm();
+  alert("Урок добавлен!");
+}
+
+/* =========================
+   УДАЛИТЬ УРОК
+   ========================= */
+
+async function deleteLesson(lessonId) {
+  const ok = confirm("Удалить этот урок?");
+  if (!ok) return;
+
+  const { error } = await supabase
+    .from("lesson_events")
+    .delete()
+    .eq("id", lessonId);
+
+  if (error) {
+    console.log(error);
+    alert("Ошибка при удалении!");
+    return;
+  }
+
+  loadLessons(currentStudentId);
+  alert("Урок удалён!");
+}
 
 /* =========================
    АВТОЗАГРУЗКА
@@ -197,4 +314,9 @@ window.addEventListener("DOMContentLoaded", () => {
 window.addStudent = addStudent;
 window.deleteStudent = deleteStudent;
 window.openStudent = openStudent;
+window.closeStudent = closeStudent;
+window.toggleEditStudent = toggleEditStudent;
+window.saveEditStudent = saveEditStudent;
+window.toggleLessonForm = toggleLessonForm;
 window.addLessonFromCard = addLessonFromCard;
+window.deleteLesson = deleteLesson;
