@@ -76,13 +76,22 @@ async function loadLessons(studentId) {
     const div = document.createElement("div");
 
     div.innerHTML = `
-      <div style="border-bottom:1px solid #ddd; padding:8px;">
-        <b>${l.created_at}</b><br>
-        📘 ${l.material || "-"}<br>
-        📚 ${l.homework || "-"}<br>
-        ➡️ ${l.next_plan || "-"}
-      </div>
-    `;
+  <div style="padding:10px; border:1px solid #ccc; margin:5px;">
+    
+    <b>${s.name}</b> (${s.instrument})
+
+    <br><br>
+
+    <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
+      Открыть
+    </button>
+
+    <button onclick="deleteStudent('${s.id}')" style="color:red;">
+      Удалить
+    </button>
+
+  </div>
+`;
 
     container.appendChild(div);
   });
@@ -131,6 +140,26 @@ async function addStudent() {
   // 🔄 обновляем список
   loadStudents();
 }
+async function deleteStudent(id) {
+
+  const confirmDelete = confirm("Удалить ученика?");
+
+  if (!confirmDelete) return;
+
+  const { error } = await supabase
+    .from("students")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  // обновляем список после удаления
+  loadStudents();
+}
 
 async function addLesson(studentId) {
 
@@ -162,7 +191,12 @@ async function addLesson(studentId) {
   alert("Урок сохранён!");
 }
 
+window.addEventListener("DOMContentLoaded", () => {
+  loadStudents();
+});
+
 
 window.addStudent = addStudent;
+window.deleteStudent = deleteStudent;
 window.addLesson = addLesson;
 window.loadStudents = loadStudents;
