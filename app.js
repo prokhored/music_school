@@ -29,24 +29,30 @@ async function loadStudents() {
 
   container.innerHTML = "";
 
-  data.forEach(student => {
+  data.forEach((s) => {
 
-    const div = document.createElement("div");
+  const div = document.createElement("div");
 
-    div.innerHTML = `
-  <div style="padding:10px; border:1px solid #ccc; margin:5px;">
-    <b>${s.name}</b> (${s.instrument})
+  div.innerHTML = `
+    <div style="padding:10px; border:1px solid #ccc; margin:5px;">
+      
+      <b>${s.name}</b> (${s.instrument})
 
-    <br>
+      <br><br>
 
-    <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
-      Открыть
-    </button>
-  </div>
-`;
-    container.appendChild(div);
-  });
-}
+      <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
+        Открыть
+      </button>
+
+      <button onclick="deleteStudent('${s.id}')" style="color:red;">
+        Удалить
+      </button>
+
+    </div>
+  `;
+
+  container.appendChild(div);
+});
 
 let currentStudentId = null;
 async function openStudent(id, name, instrument) {
