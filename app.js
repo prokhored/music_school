@@ -82,26 +82,16 @@ async function loadLessons(studentId) {
     const div = document.createElement("div");
 
     div.innerHTML = `
-  <div style="padding:10px; border:1px solid #ccc; margin:5px;">
-    
-    <b>${s.name}</b> (${s.instrument})
-
-    <br><br>
-
-    <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
-      Открыть
-    </button>
-
-    <button onclick="deleteStudent('${s.id}')" style="color:red;">
-      Удалить
-    </button>
-
-  </div>
-`;
+      <div style="border-bottom:1px solid #ddd; padding:8px;">
+        <b>${l.created_at}</b><br>
+        📘 ${l.material || "-"}<br>
+        📚 ${l.homework || "-"}<br>
+        ➡️ ${l.next_plan || "-"}
+      </div>
+    `;
 
     container.appendChild(div);
   });
-}
 
 async function addLessonFromCard() {
 
