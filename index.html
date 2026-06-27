@@ -22,6 +22,19 @@
 
 
 <button onclick="addStudent()">Добавить</button>
+  <div id="studentView" style="display:none; margin-top:20px; padding:10px; border:2px solid black;">
+  
+  <h2 id="studentName"></h2>
+  <p id="studentInstrument"></p>
+
+  <button onclick="addLessonFromCard()">
+    ➕ Провести урок
+  </button>
+
+  <h3>История</h3>
+  <div id="lessons"></div>
+
+</div>
 
 <script type="module" src="app.js"></script>
 </body>
