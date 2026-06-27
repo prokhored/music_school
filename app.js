@@ -19,7 +19,6 @@ async function loadStudents() {
     .from("students")
     .select("*");
 
-  // ❗ если ошибка — покажем в консоли
   if (error) {
     console.log("Ошибка загрузки:", error);
     return;
@@ -31,29 +30,30 @@ async function loadStudents() {
 
   data.forEach((s) => {
 
-  const div = document.createElement("div");
+    const div = document.createElement("div");
 
-  div.innerHTML = `
-    <div style="padding:10px; border:1px solid #ccc; margin:5px;">
-      
-      <b>${s.name}</b> (${s.instrument})
+    div.innerHTML = `
+      <div style="padding:10px; border:1px solid #ccc; margin:5px;">
+        
+        <b>${s.name}</b> (${s.instrument})
 
-      <br><br>
+        <br><br>
 
-      <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
-        Открыть
-      </button>
+        <button onclick="openStudent('${s.id}', '${s.name}', '${s.instrument}')">
+          Открыть
+        </button>
 
-      <button onclick="deleteStudent('${s.id}')" style="color:red;">
-        Удалить
-      </button>
+        <button onclick="deleteStudent('${s.id}')" style="color:red;">
+          Удалить
+        </button>
 
-    </div>
-  `;
+      </div>
+    `;
 
-  container.appendChild(div);
-});
+    container.appendChild(div);
+  });
 
+} // 👈 ВОТ ЭТОЙ СКОБКИ У ТЕБЯ НЕ БЫЛО
 let currentStudentId = null;
 async function openStudent(id, name, instrument) {
 
