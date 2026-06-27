@@ -384,13 +384,73 @@ async function addSubscription() {
   loadLessons(currentStudentId);
   alert("Абонемент на 4 занятия добавлен!");
 }
+async function loadSchedule() {
+  const { data: students, error: studentsError } = await supabase
+    .from("students")
+    .select("*");
 
+  if (studentsError) {
+    console.log(studentsError);
+    return;
+  }
+
+  const studentMap = students.reduce((map, student) => {
+    map[student.id] = student;
+    return map;
+  }, {});
+
+  const { data: events, error: eventsError } = await supabase
+    .from("lesson_events")
+    .select("*")
+    .order("lesson_date", { ascending: true });
+
+  if (eventsError) {
+    console.log(eventsError);
+    return;
+  }
+
+  const scheduleContainer = document.getElementById("schedule");
+  scheduleContainer.innerHTML = "";
+
+  const lessons = events.filter((event) => event.type === "lesson");
+
+  if (lessons.length === 0) {
+    scheduleContainer.innerHTML = `<p class="empty-state">Нет запланированных уроков.</p>`;
+    return;
+  }
+
+  lessons.forEach((lesson) => {
+    const student = studentMap[lesson.student_id] || { name: "Неизвестный", instrument: "" };
+    const eventDate = lesson.lesson_date || lesson.created_at;
+    const formattedDate = formatDateTime(eventDate);
+
+    const card = document.createElement("div");
+    card.className = "lesson-item schedule-item";
+    card.innerHTML = `
+      <div class="lesson-date">📅 ${formattedDate}</div>
+      <div class="lesson-content">
+        <strong>Ученик:</strong> ${student.name} ${student.instrument ? `(${student.instrument})` : ""}<br>
+        <strong>Материал:</strong> ${lesson.material || "-"}<br>
+        <strong>Домашка:</strong> ${lesson.homework || "-"}<br>
+        <strong>Следующий план:</strong> ${lesson.next_plan || "-"}
+      </div>
+    `;
+
+    scheduleContainer.appendChild(card);
+  });
+}
 /* =========================
    АВТОЗАГРУЗКА
    ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-  loadStudents();
+  if (document.getElementById("students")) {
+    loadStudents();
+  }
+
+  if (document.getElementById("schedule")) {
+    loadSchedule();
+  }
 });
 
 /* =========================
