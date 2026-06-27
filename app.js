@@ -180,7 +180,7 @@ async function addLessonFromCard() {
   }
 
   loadLessons(currentStudentId);
-}
+} // 👈 ОБЯЗАТЕЛЬНО ЗАКРЫЛИ ФУНКЦИЮ
 
 /* =========================
    АВТОЗАГРУЗКА
