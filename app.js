@@ -13,6 +13,12 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 
+let currentStudentId = null;
+
+/* =========================
+   ЗАГРУЗКА УЧЕНИКОВ
+   ========================= */
+
 async function loadStudents() {
 
   const { data, error } = await supabase
@@ -20,12 +26,11 @@ async function loadStudents() {
     .select("*");
 
   if (error) {
-    console.log("Ошибка загрузки:", error);
+    console.log(error);
     return;
   }
 
   const container = document.getElementById("students");
-
   container.innerHTML = "";
 
   data.forEach((s) => {
@@ -52,9 +57,57 @@ async function loadStudents() {
 
     container.appendChild(div);
   });
+}
 
-} // 👈 ВОТ ЭТОЙ СКОБКИ У ТЕБЯ НЕ БЫЛО
-let currentStudentId = null;
+/* =========================
+   ДОБАВИТЬ УЧЕНИКА
+   ========================= */
+
+async function addStudent() {
+
+  const name = document.getElementById("name").value;
+  const instrument = document.getElementById("instrument").value;
+
+  const { error } = await supabase
+    .from("students")
+    .insert([
+      { name, instrument }
+    ]);
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  loadStudents();
+}
+
+/* =========================
+   УДАЛИТЬ УЧЕНИКА
+   ========================= */
+
+async function deleteStudent(id) {
+
+  const ok = confirm("Удалить ученика?");
+  if (!ok) return;
+
+  const { error } = await supabase
+    .from("students")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  loadStudents();
+}
+
+/* =========================
+   ОТКРЫТЬ УЧЕНИКА
+   ========================= */
+
 async function openStudent(id, name, instrument) {
 
   currentStudentId = id;
@@ -65,6 +118,10 @@ async function openStudent(id, name, instrument) {
 
   loadLessons(id);
 }
+
+/* =========================
+   ИСТОРИЯ УРОКОВ
+   ========================= */
 
 async function loadLessons(studentId) {
 
@@ -77,21 +134,26 @@ async function loadLessons(studentId) {
   const container = document.getElementById("lessons");
   container.innerHTML = "";
 
-  data.forEach(l => {
+  data.forEach((l) => {
 
     const div = document.createElement("div");
 
     div.innerHTML = `
       <div style="border-bottom:1px solid #ddd; padding:8px;">
-        <b>${l.created_at}</b><br>
         📘 ${l.material || "-"}<br>
         📚 ${l.homework || "-"}<br>
-        ➡️ ${l.next_plan || "-"}
+        ➡️ ${l.next_plan || "-"}<br>
+        <small>${l.created_at}</small>
       </div>
     `;
 
     container.appendChild(div);
   });
+}
+
+/* =========================
+   ДОБАВИТЬ УРОК
+   ========================= */
 
 async function addLessonFromCard() {
 
@@ -99,100 +161,40 @@ async function addLessonFromCard() {
   const homework = prompt("Домашка:");
   const next = prompt("План:");
 
-  await supabase.from("lesson_events").insert([
-    {
-      student_id: currentStudentId,
-      type: "lesson",
-      value: -1,
-      material,
-      homework,
-      next_plan: next
-    }
-  ]);
-
-  loadLessons(currentStudentId);
-}
-
-async function addStudent() {
-
-  // 🔴 берём данные из input'ов HTML
-  const name = document.getElementById("name").value;
-  const instrument = document.getElementById("instrument").value;
-
-  const { error } = await supabase
-    .from("students")
-    .insert([
-      {
-        name: name,              // ← можно оставить так
-        instrument: instrument   // ← или поменять названия полей
-      }
-    ]);
-
-  if (error) {
-    console.log("Ошибка добавления:", error);
-    return;
-  }
-
-  // 🔄 обновляем список
-  loadStudents();
-}
-async function deleteStudent(id) {
-
-  const confirmDelete = confirm("Удалить ученика?");
-
-  if (!confirmDelete) return;
-
-  const { error } = await supabase
-    .from("students")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    alert(error.message);
-    return;
-  }
-
-  // обновляем список после удаления
-  loadStudents();
-}
-
-async function addLesson(studentId) {
-
-  // 🔴 всплывающие окна (пока так, потом улучшим UI)
-  const material = prompt("📘 Что проходили на уроке?");
-  const homework = prompt("📚 Домашнее задание?");
-  const nextPlan = prompt("➡️ План следующего урока?");
-
   const { error } = await supabase
     .from("lesson_events")
     .insert([
       {
-        student_id: studentId,
-
-        type: "lesson",   // 🔴 НЕ ТРОГАЙ пока
-        value: -1,        // 🔴 это значит "минус 1 занятие"
-
-        material: material,
-        homework: homework,
-        next_plan: nextPlan
+        student_id: currentStudentId,
+        type: "lesson",
+        value: -1,
+        material,
+        homework,
+        next_plan: next
       }
     ]);
 
   if (error) {
-    console.log("Ошибка урока:", error);
+    console.log(error);
     return;
   }
 
-  alert("Урок сохранён!");
+  loadLessons(currentStudentId);
 }
+
+/* =========================
+   АВТОЗАГРУЗКА
+   ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
   loadStudents();
 });
 
+/* =========================
+   ГЛОБАЛЬНЫЕ ФУНКЦИИ
+   ========================= */
 
 window.addStudent = addStudent;
 window.deleteStudent = deleteStudent;
-window.addLesson = addLesson;
-window.loadStudents = loadStudents;
+window.openStudent = openStudent;
+window.addLessonFromCard = addLessonFromCard;
