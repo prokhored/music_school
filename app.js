@@ -5,7 +5,7 @@ const supabaseUrl = "https://musbeszcufebiwtevabu.supabase.co";
 // ↑ ЗАМЕНИ НА СВОЙ Project URL из Supabase Dashboard
 
 // 2) anon key (публичный ключ)
-const supabaseKey = "sb_publishable_qAylcl5KsRcaKojJlcBxDw_vgqhFvfT";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11c2Jlc3pjdWZlYml3dGV2YWJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTUxMDUsImV4cCI6MjA5Nzk3MTEwNX0.GrdQto2lmUo-CMwiECN2B4nIqv60gB-uQrTocVM52z0";
 // ↑ ЗАМЕНИ НА СВОЙ anon public key из Supabase Settings → API
 
 /* ========================= */
