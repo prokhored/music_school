@@ -13,12 +13,24 @@
   <div>
     <h1>🎵 Ученики</h1>
   </div>
-  <a class="btn-secondary" href="schedule.html">📅 Смотреть расписание</a>
+  <div class="header-actions">
+    <a class="btn-secondary" href="schedule.html">📅 Смотреть расписание</a>
+    <button id="logoutButton" class="btn-danger" onclick="logout()" style="display:none;">Выйти</button>
+  </div>
 </header>
 
-<div id="students"></div>
+<section id="authSection" class="auth-card">
+  <h2>Вход для администратора</h2>
+  <input id="authUsername" placeholder="Логин" autocomplete="username">
+  <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password">
+  <button class="btn-primary" onclick="login()">Войти</button>
+  <p class="auth-note">Только после входа становится доступен раздел учеников.</p>
+</section>
 
-<section id="addStudentSection">
+<div id="mainContent" style="display:none;">
+  <div id="students"></div>
+
+  <section id="addStudentSection">
   <h2>➕ Добавить ученика</h2>
   <input id="name" placeholder="Имя ученика">
   <input id="instrument" placeholder="Инструмент">
