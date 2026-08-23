@@ -12,56 +12,31 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const AUTH_USERS = [
-  { username: "admin", password: "1234" }
-];
-
 let currentStudentId = null;
 let currentStudentName = null;
 let currentStudentInstrument = null;
-let isAuthenticated = false;
+let isAuthenticated = true;
 
 function authenticateUser(authenticated) {
   isAuthenticated = authenticated;
-  const authSection = document.getElementById("authSection");
   const mainContent = document.getElementById("mainContent");
-  const logoutButton = document.getElementById("logoutButton");
 
-  if (!authSection || !mainContent || !logoutButton) return;
+  if (!mainContent) return;
 
-  if (authenticated) {
-    authSection.style.display = "none";
-    mainContent.style.display = "block";
-    logoutButton.style.display = "inline-block";
-    loadStudents();
-  } else {
-    authSection.style.display = "block";
-    mainContent.style.display = "none";
-    logoutButton.style.display = "none";
-  }
+  mainContent.style.display = "block";
+  loadStudents();
 }
 
 function login() {
-  const username = document.getElementById("authUsername").value.trim();
-  const password = document.getElementById("authPassword").value;
-  const user = AUTH_USERS.find((u) => u.username === username && u.password === password);
-
-  if (!user) {
-    alert("Неверный логин или пароль.");
-    return;
-  }
-
-  sessionStorage.setItem("music_crm_logged_in", "yes");
   authenticateUser(true);
 }
 
 function logout() {
-  sessionStorage.removeItem("music_crm_logged_in");
-  authenticateUser(false);
+  authenticateUser(true);
 }
 
 function isLoggedIn() {
-  return sessionStorage.getItem("music_crm_logged_in") === "yes";
+  return true;
 }
 
 /* =========================
@@ -229,12 +204,47 @@ async function saveEditStudent() {
    ПОКАЗАТЬ/СКРЫТЬ ФОРМУ УРОКА
    ========================= */
 
+function currentYekDateTimeLocal() {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Yekaterinburg",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(now);
+  const values = {};
+
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      values[part.type] = part.value;
+    }
+  }
+
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}+05:00`;
+}
+
+function toManualScheduleISO(dateTimeValue) {
+  if (!dateTimeValue) return null;
+
+  const [datePart, timePart = "00:00:00"] = dateTimeValue.split("T");
+  const [year, month, day] = datePart.split("-");
+  const [hours, minutes, seconds = "00"] = timePart.split(":");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+05:00`;
+}
+
 function toggleLessonForm() {
   const form = document.getElementById("lessonForm");
   if (form.style.display === "none") {
-    // Установить сегодняшнюю дату по умолчанию
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Yekaterinburg" }).split(" ")[0];
     document.getElementById("lessonDate").value = today;
+    document.getElementById("scheduleLesson").value = currentYekDateTimeLocal();
     document.getElementById("lessonMaterial").value = "";
     document.getElementById("lessonHomework").value = "";
     document.getElementById("lessonPlan").value = "";
@@ -250,6 +260,7 @@ function formatDateTime(rawDate, withTime = true) {
   if (Number.isNaN(date.getTime())) return rawDate;
 
   const options = {
+    timeZone: "Asia/Yekaterinburg",
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
@@ -260,7 +271,7 @@ function formatDateTime(rawDate, withTime = true) {
     options.minute = "2-digit";
   }
 
-  return date.toLocaleString("ru-RU", options).replace(",", "");
+  return new Intl.DateTimeFormat("ru-RU", options).format(date).replace(",", "");
 }
 
 /* =========================
@@ -294,7 +305,9 @@ async function loadLessons(studentId) {
     div.className = "lesson-item";
 
     const eventDate = l.lesson_date ? l.lesson_date : l.created_at;
+    const scheduleDate = l.schedule_date || l.schedule || null;
     const formattedDate = formatDateTime(eventDate);
+    const formattedSchedule = scheduleDate ? formatDateTime(scheduleDate) : "-";
 
     if (l.type === "abonement") {
       div.innerHTML = `
@@ -307,6 +320,7 @@ async function loadLessons(studentId) {
     } else {
       div.innerHTML = `
         <div class="lesson-date">📅 ${formattedDate}</div>
+        <div class="schedule-date">🗓️ Расписание: ${formattedSchedule}</div>
         <div class="lesson-content">
           <strong>📘 Материал:</strong> ${l.material || "-"}<br>
           <strong>📚 Домашка:</strong> ${l.homework || "-"}<br>
@@ -329,6 +343,7 @@ async function loadLessons(studentId) {
 async function addLessonFromCard() {
 
   const lessonDate = document.getElementById("lessonDate").value;
+  const scheduleDate = document.getElementById("scheduleLesson").value;
   const material = document.getElementById("lessonMaterial").value;
   const homework = document.getElementById("lessonHomework").value;
   const next = document.getElementById("lessonPlan").value;
@@ -337,6 +352,9 @@ async function addLessonFromCard() {
     alert("Заполните все поля!");
     return;
   }
+
+  const lessonDateTime = currentYekDateTimeLocal();
+  const scheduleDateTime = scheduleDate ? toManualScheduleISO(scheduleDate) : lessonDateTime;
 
   const { data, error: countError } = await supabase
     .from("lesson_events")
@@ -365,7 +383,8 @@ async function addLessonFromCard() {
         student_id: currentStudentId,
         type: "lesson",
         value: -1,
-        lesson_date: lessonDate,
+        lesson_date: lessonDateTime,
+        schedule_date: scheduleDateTime,
         material,
         homework,
         next_plan: next
@@ -469,12 +488,15 @@ async function loadSchedule() {
   lessons.forEach((lesson) => {
     const student = studentMap[lesson.student_id] || { name: "Неизвестный", instrument: "" };
     const eventDate = lesson.lesson_date || lesson.created_at;
+    const schedule = lesson.schedule_date || lesson.schedule || null;
     const formattedDate = formatDateTime(eventDate);
+    const formattedSchedule = schedule ? formatDateTime(schedule) : "-";
 
     const card = document.createElement("div");
     card.className = "lesson-item schedule-item";
     card.innerHTML = `
       <div class="lesson-date">📅 ${formattedDate}</div>
+      <div class="schedule-date">🗓️ Расписание: ${formattedSchedule}</div>
       <div class="lesson-content">
         <strong>Ученик:</strong> ${student.name} ${student.instrument ? `(${student.instrument})` : ""}<br>
         <strong>Материал:</strong> ${lesson.material || "-"}<br>
@@ -491,7 +513,7 @@ async function loadSchedule() {
    ========================= */
 
 window.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("authSection")) {
+  if (document.getElementById("mainContent")) {
     authenticateUser(isLoggedIn());
   }
 

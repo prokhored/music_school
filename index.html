@@ -15,19 +15,10 @@
   </div>
   <div class="header-actions">
     <a class="btn-secondary" href="schedule.html">📅 Смотреть расписание</a>
-    <button id="logoutButton" class="btn-danger" onclick="logout()" style="display:none;">Выйти</button>
   </div>
 </header>
 
-<section id="authSection" class="auth-card">
-  <h2>Вход для администратора</h2>
-  <input id="authUsername" placeholder="Логин" autocomplete="username">
-  <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password">
-  <button class="btn-primary" onclick="login()">Войти</button>
-  <p class="auth-note">Только после входа становится доступен раздел учеников.</p>
-</section>
-
-<div id="mainContent" style="display:none;">
+<div id="mainContent" style="display:block;">
   <div id="students"></div>
 
   <section id="addStudentSection">
@@ -69,7 +60,14 @@
 
   <div id="lessonForm" style="display:none;">
     <h3>Новый урок</h3>
-    <input type="date" id="lessonDate">
+    <div class="field-group">
+      <label for="lessonDate">Дата урока (Екатеринбург)</label>
+      <input type="date" id="lessonDate">
+    </div>
+    <div class="field-group">
+      <label for="scheduleLesson">Дата и время следующего урока</label>
+      <input type="datetime-local" id="scheduleLesson">
+    </div>
     <input id="lessonMaterial" placeholder="Материал">
     <input id="lessonHomework" placeholder="Домашка">
     <input id="lessonPlan" placeholder="План на следующий урок">
